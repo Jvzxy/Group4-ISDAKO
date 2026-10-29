@@ -1,0 +1,21 @@
+{
+  "name": "isdako-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ISDAKO server: fisher deliveries, QR identity and SMS alerts",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "seed": "tsx src/seed.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  }
+}
