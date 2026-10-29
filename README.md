@@ -2,6 +2,34 @@
 
 A phone app for fishers. Instead of writing down every delivery by hand, the fisher shows a QR code. Staff scan it, enter the catch, and the fisher sees their deliveries on their own phone straight away. If the fisher has a phone number on file, they also get an SMS each time a delivery is recorded.
 
+## Members
+- Trix John D. Villaceran
+- Jussy Jay G. Durain 
+- Ike Feb Bunotan
+- Remiel Charles O. Fugnit
+- Yannis Love Evander Gualberto
+- Sean Gabrielle Torres
+- Redeemer B. Aparece
+
+Each member's role is listed in [MEMBERS.md](MEMBERS.md).
+
+## Stack
+| Part | Technology | Version |
+| --- | --- | --- |
+| Server | Node.js | 22.13 or newer |
+| Server | TypeScript | 6.0.3 |
+| Server | tsx | 4.23.12 |
+| Server | SQLite (built into Node.js) | file: `server/data/isdako.db` |
+| Mobile | Expo SDK | 58 |
+| Mobile | React Native | 0.88.0 |
+| Mobile | React | 19.3.0 |
+| Mobile | TypeScript | 6.0.3 |
+| Mobile | expo-camera | 58.0.13 |
+| Mobile | react-native-qrcode-svg | 6.3.45 |
+| Mobile | react-native-svg | 15.16.0 |
+| Mobile | AsyncStorage | 2.2.0 |
+| SMS | Semaphore or Twilio (optional) | test mode by default |
+
 ISDAKO has two parts:
 
 | Folder | What it is |
@@ -67,7 +95,7 @@ Instead of typing it, you can copy `mobile/.env.example` to `mobile/.env` and pu
 
 **Same Wi-Fi.** Your phone and the computer running the server must be on the same Wi-Fi network. If the connection test fails, allow Node.js through the computer's firewall for private networks.
 
-**Expo Go says the project is incompatible.** The project is built for Expo SDK 57. If your Expo Go is a different SDK, run this in `mobile/`:
+**Expo Go says the project is incompatible.** The project is built for Expo SDK 58. If your Expo Go is a different SDK, run this in `mobile/`:
 
 ```bash
 npx expo install expo@^58.0.0 --fix
@@ -82,7 +110,7 @@ Change `58` to the SDK number shown by Expo Go.
 
 ## 3. SMS alerts
 
-I suggest SMS over Messenger. It works on any phone, including basic ones, and doesn't need the fisher to have data or an account. Messenger would require every fisher to have a Facebook account and to message your page first. Remote push notifications are also not available in Expo Go, so they wouldn't work in this setup.
+We chose SMS over Messenger. It works on any phone, including basic ones, and doesn't need the fisher to have data or an account. Messenger would require every fisher to have a Facebook account and to message your page first. Remote push notifications are also not available in Expo Go, so they wouldn't work in this setup.
 
 The server decides when to send, so it works even if the fisher's app is closed.
 
@@ -126,16 +154,16 @@ Use `SMS_PROVIDER=off` to never send. See `server/.env.example` for every settin
 - Use HTTPS when the server is on the internet, and set `TRUST_PROXY=1` if it sits behind a proxy such as nginx or Cloudflare.
 - The database is one file, `server/data/isdako.db`. Back it up.
 
-## What was tested, and what was not
+## Testing
 
-Tested (automatically, on the machine where this was built):
-- **Server**: 80 checks pass. They cover PIN login and lockout, token tampering, phone number handling, SMS wording (plain ASCII, 160 characters or less), opt in and out, and the staff and fisher endpoints. The Semaphore and Twilio paths were tested against fake gateways that also simulated errors, hangs and an unreachable network, to confirm a delivery is never lost when SMS fails.
-- **App logic**: 87 checks pass. They run the app's real `api`, `format`, `qr` and `storage` code against a live server: QR parsing, server address handling, money, weight and date formatting (Manila time), saving and clearing the session, and every request the app makes.
+**Tested:**
+- **Server**: 80 automated checks pass. They cover PIN login and lockout, token tampering, phone number handling, SMS wording (plain ASCII, 160 characters or less), opt in and out, and the staff and fisher endpoints. The Semaphore and Twilio paths were tested against fake gateways that simulated errors, hangs and an unreachable network, to confirm a delivery is never lost when SMS fails.
+- **App logic**: 87 automated checks pass. They run the app's `api`, `format`, `qr` and `storage` code against a live server: QR parsing, server address handling, money, weight and date formatting (Manila time), saving and clearing the session, and every request the app makes.
 - **TypeScript**: the whole app type-checks.
 
-**Not tested:**
-- **The app screens have never been run on a phone or in Expo Go.** The environment this was built in cannot install Expo or open a device, so the screens were only type-checked against stand-ins for the React Native libraries. The camera scanner, QR drawing, layout, animations and the keyboard behavior on real devices are the most likely places for something to need a small fix. Please try it on a real phone and send me anything that looks wrong.
-- **No real SMS was sent.** Semaphore and Twilio were only tested against fake servers, not the real services.
+**Still to test:**
+- The app screens on a real phone in Expo Go, especially the camera scanner, QR drawing, layout and keyboard behavior.
+- Sending a real SMS through Semaphore or Twilio (so far only tested against fake servers).
 
 ## Changes from the earlier web version
 
