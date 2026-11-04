@@ -1,4 +1,4 @@
-// Searchable list of fishers, used by the Scan and Fishers tabs.
+// Shows a searchable fisher list on the Scan and Fishers tabs.
 
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -15,7 +15,7 @@ export function FisherList({
   onOpen,
   onAdd,
 }: {
-  /** null while loading */
+  /** null indicates that loading is in progress */
   fishers: FisherAdmin[] | null;
   loadError: string | null;
   onRetry: () => void;

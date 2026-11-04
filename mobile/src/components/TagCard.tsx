@@ -1,5 +1,4 @@
-// The one memorable thing in the app: a yellow crate tag swinging from a string over the water.
-// Today's catch is the big number on it. The 7-day, monthly and all-time totals sit on the tear-off strip.
+// A yellow tag hangs over the water, highlighting today's catch and showing longer-term totals below.
 
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -10,7 +9,7 @@ import { describeFisher, fmtMoney, fmtNum } from '../format';
 import { colors } from '../theme';
 import type { FisherPublic, Summary, Totals } from '../types';
 
-const OVERLAP = 56; // how far the tag hangs below the navy area
+const OVERLAP = 56; // Distance the tag extends below the navy section.
 
 function headline(t: Totals): { value: string; unit: string } {
   if (t.kg > 0) return { value: fmtNum(t.kg), unit: 'kg' };
@@ -38,14 +37,14 @@ export function TagCard({
 }: {
   fisher: Pick<FisherPublic, 'name' | 'boat' | 'barangay'>;
   summary: Summary;
-  /** e.g. a Back button, shown above the tag */
+  /** Optional content, such as a Back button, displayed above the tag. */
   topLeft?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const angle = useRef(new Animated.Value(5)).current;
 
-  // One swing when the tag first appears, then it hangs still. Skipped if the phone asks for reduced motion.
+  // Animate a single gentle swing on entry unless the device has reduced motion enabled.
   useEffect(() => {
     let cancelled = false;
     AccessibilityInfo.isReduceMotionEnabled()

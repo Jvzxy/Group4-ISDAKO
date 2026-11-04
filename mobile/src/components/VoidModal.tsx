@@ -5,7 +5,7 @@ import { colors } from '../theme';
 import type { Delivery } from '../types';
 import { Button, ErrorText, Field } from '../ui';
 
-/** Asks staff to confirm voiding a delivery, with an optional reason. */
+/** Lets staff confirm a delivery void and optionally provide a reason. */
 export function VoidModal({
   delivery,
   onCancel,
@@ -13,7 +13,7 @@ export function VoidModal({
 }: {
   delivery: Delivery | null;
   onCancel: () => void;
-  /** Throw to keep the dialog open and show the error. */
+  /** Rejecting keeps the dialog open and displays the returned error. */
   onConfirm: (delivery: Delivery, reason: string) => Promise<void>;
 }) {
   const [reason, setReason] = useState('');

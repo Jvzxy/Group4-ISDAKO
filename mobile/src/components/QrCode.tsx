@@ -3,7 +3,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { qrValue } from '../qr';
 import { colors } from '../theme';
 
-/** A fisher's QR code. It is drawn on the phone, so it also works with no signal. */
+/** Renders a fisher's QR code locally, so it remains available without a connection. */
 export function QrCode({ token, size = 220 }: { token: string; size?: number }) {
   return (
     <View style={styles.frame} accessibilityLabel="QR code" accessible>

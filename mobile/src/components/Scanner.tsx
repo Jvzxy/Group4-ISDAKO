@@ -1,4 +1,4 @@
-// Camera that reads ISDAKO QR codes. The parent decides what to do with the token.
+// Scans ISDAKO QR codes and passes the extracted token to the parent for handling.
 
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useCallback, useRef, useState } from 'react';
@@ -13,7 +13,7 @@ export function Scanner({
   onToken,
   hint = DEFAULT_HINT,
 }: {
-  /** Called once per scan with the token inside the QR. The camera waits for it to finish. */
+  /** Receives the QR token once per scan; scanning pauses until this callback completes. */
   onToken: (token: string) => void | Promise<void>;
   hint?: string;
 }) {
@@ -27,7 +27,7 @@ export function Scanner({
       if (busy.current) return;
       const token = tokenFromQr(result.data);
       if (!token) {
-        // the camera reports the same code many times a second; only say it once in a while
+        // Repeated camera results are common, so limit how often an invalid-code message appears.
         const now = Date.now();
         if (now - lastWrongAt.current > 2500) {
           lastWrongAt.current = now;
@@ -41,7 +41,7 @@ export function Scanner({
         try {
           await onToken(token);
         } finally {
-          // leave a moment before the next scan so a failed lookup is not repeated instantly
+          // Pause briefly before scanning again to avoid immediately repeating a failed lookup.
           setTimeout(() => {
             busy.current = false;
           }, 1500);

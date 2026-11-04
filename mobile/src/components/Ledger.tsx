@@ -1,4 +1,4 @@
-// Deliveries grouped by day. Staff also get a Void button on each line.
+// Organizes deliveries by date and lets staff void individual entries.
 
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -80,7 +80,7 @@ export function Ledger({ deliveries, onVoid }: { deliveries: Delivery[]; onVoid?
   );
 }
 
-/** A tappable row used by the staff lists (fishers, today's deliveries). */
+/** A pressable row for staff lists, such as fishers and today's deliveries. */
 export function Row({ onPress, children }: { onPress: () => void; children: ReactNode }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
