@@ -1,17 +1,47 @@
+
 // Every delivery on one day, for all fishers.
 
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { api, errorText } from '../../api';
 import { Row } from '../../components/Ledger';
 import { VoidModal } from '../../components/VoidModal';
-import { dayHeading, fmtMoney, fmtTime, qtyText, shiftYmd, smsNotice, todayYmd, totalsText } from '../../format';
-import { colors } from '../../theme';
+import {
+  dayHeading,
+  fmtMoney,
+  fmtTime,
+  qtyText,
+  shiftYmd,
+  smsNotice,
+  todayYmd,
+  totalsText,
+} from '../../format';
+import { useTheme } from '../../ThemeContext';
 import type { DayDelivery, DayView, Delivery } from '../../types';
-import { Button, ErrorText, LinkButton, Muted, Screen, Title, useToast } from '../../ui';
+import {
+  Button,
+  ErrorText,
+  LinkButton,
+  Muted,
+  Screen,
+  Title,
+  useToast,
+} from '../../ui';
 
-export function TodayScreen({ onOpenToken }: { onOpenToken: (token: string) => void }) {
+export function TodayScreen({
+  onOpenToken,
+}: {
+  onOpenToken: (token: string) => void;
+}) {
   const toast = useToast();
+  const { colors } = useTheme();
+
   const [ymd, setYmd] = useState(todayYmd());
   const [data, setData] = useState<DayView | null>(null);
   const [error, setError] = useState('');
@@ -52,86 +82,243 @@ export function TodayScreen({ onOpenToken }: { onOpenToken: (token: string) => v
   return (
     <>
       <Screen
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} colors={[colors.abyss]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            colors={[colors.abyss]}
+          />
+        }
       >
         <Title>Deliveries</Title>
 
         <View style={styles.dayNav}>
           <View style={styles.navButton}>
-            <Button small variant="ghost" title="‹" onPress={() => setYmd(shiftYmd(ymd, -1))} />
+            <Button
+              small
+              variant="ghost"
+              title="‹"
+              onPress={() => setYmd(shiftYmd(ymd, -1))}
+            />
           </View>
+
           <View style={styles.dayLabel}>
-            <Text style={styles.dayText}>{dayHeading(ymd)}</Text>
-            {isToday ? <Muted>Today</Muted> : <LinkButton title="Back to today" onPress={() => setYmd(todayYmd())} />}
+            <Text style={[styles.dayText, { color: colors.text }]}>
+              {dayHeading(ymd)}
+            </Text>
+
+            {isToday ? (
+              <Muted>Today</Muted>
+            ) : (
+              <LinkButton
+                title="Back to today"
+                onPress={() => setYmd(todayYmd())}
+              />
+            )}
           </View>
+
           <View style={styles.navButton}>
-            <Button small variant="ghost" title="›" disabled={isToday} onPress={() => setYmd(shiftYmd(ymd, 1))} />
+            <Button
+              small
+              variant="ghost"
+              title="›"
+              disabled={isToday}
+              onPress={() => setYmd(shiftYmd(ymd, 1))}
+            />
           </View>
         </View>
 
         {error ? <ErrorText>{error}</ErrorText> : null}
-        {!data && !error ? <ActivityIndicator color={colors.abyss} style={styles.loading} /> : null}
+
+        {!data && !error ? (
+          <ActivityIndicator
+            color={colors.abyss}
+            style={styles.loading}
+          />
+        ) : null}
 
         {data ? (
           <View>
-            <View style={styles.totals}>
-              <Text style={styles.totalsMain}>{totalsText(data.totals)}</Text>
-              <Text style={styles.totalsSub}>
-                {data.totals.deliveries} {data.totals.deliveries === 1 ? 'delivery' : 'deliveries'}
-                {data.totals.amount > 0 ? `, ${fmtMoney(data.totals.amount)}` : ''}
+            <View
+              style={[
+                styles.totals,
+                { backgroundColor: colors.abyss },
+              ]}
+            >
+              <Text style={[styles.totalsMain, { color: colors.foam }]}>
+                {totalsText(data.totals)}
+              </Text>
+
+              <Text
+                style={[
+                  styles.totalsSub,
+                  { color: colors.onDarkMuted },
+                ]}
+              >
+                {data.totals.deliveries}{' '}
+                {data.totals.deliveries === 1
+                  ? 'delivery'
+                  : 'deliveries'}
+                {data.totals.amount > 0
+                  ? `, ${fmtMoney(data.totals.amount)}`
+                  : ''}
               </Text>
             </View>
-            {data.items.length === 0 ? <Muted>No deliveries on this day.</Muted> : null}
+
+            {data.items.length === 0 ? (
+              <Muted>No deliveries on this day.</Muted>
+            ) : null}
+
             {data.items.map((d) => (
-              <DayLine key={d.id} d={d} onOpen={() => onOpenToken(d.fisherToken)} onVoid={() => setVoiding(d)} />
+              <DayLine
+                key={d.id}
+                d={d}
+                onOpen={() => onOpenToken(d.fisherToken)}
+                onVoid={() => setVoiding(d)}
+              />
             ))}
           </View>
         ) : null}
       </Screen>
-      <VoidModal delivery={voiding} onCancel={() => setVoiding(null)} onConfirm={confirmVoid} />
+
+      <VoidModal
+        delivery={voiding}
+        onCancel={() => setVoiding(null)}
+        onConfirm={confirmVoid}
+      />
     </>
   );
 }
 
-function DayLine({ d, onOpen, onVoid }: { d: DayDelivery; onOpen: () => void; onVoid: () => void }) {
+function DayLine({
+  d,
+  onOpen,
+  onVoid,
+}: {
+  d: DayDelivery;
+  onOpen: () => void;
+  onVoid: () => void;
+}) {
+  const { colors } = useTheme();
   const voided = d.voidedAt !== null;
+
   return (
     <View>
       <Row onPress={onOpen}>
         <View style={styles.lineRow}>
           <View style={styles.lineMain}>
-            <Text style={[styles.fisher, voided && styles.struck]}>{d.fisherName}</Text>
-            <Text style={styles.meta}>{`${d.species}, ${fmtTime(d.deliveredAt)}`}</Text>
+            <Text
+              style={[
+                styles.fisher,
+                { color: voided ? colors.muted : colors.text },
+                voided && styles.struck,
+              ]}
+            >
+              {d.fisherName}
+            </Text>
+
+            <Text style={[styles.meta, { color: colors.secondaryText }]}>
+              {`${d.species}, ${fmtTime(d.deliveredAt)}`}
+            </Text>
           </View>
+
           <View style={styles.lineQty}>
-            <Text style={[styles.qty, voided && styles.struck]}>{qtyText(d)}</Text>
-            {d.amount !== null ? <Text style={styles.meta}>{fmtMoney(d.amount)}</Text> : null}
+            <Text
+              style={[
+                styles.qty,
+                { color: voided ? colors.muted : colors.text },
+                voided && styles.struck,
+              ]}
+            >
+              {qtyText(d)}
+            </Text>
+
+            {d.amount !== null ? (
+              <Text style={[styles.meta, { color: colors.secondaryText }]}>
+                {fmtMoney(d.amount)}
+              </Text>
+            ) : null}
           </View>
         </View>
-        {voided ? <Text style={styles.voidNote}>{d.voidReason ? `Voided: ${d.voidReason}` : 'Voided'}</Text> : null}
+
+        {voided ? (
+          <Text style={[styles.voidNote, { color: colors.coral }]}>
+            {d.voidReason ? `Voided: ${d.voidReason}` : 'Voided'}
+          </Text>
+        ) : null}
       </Row>
-      {!voided ? <LinkButton title="Void" danger onPress={onVoid} /> : null}
+
+      {!voided ? (
+        <LinkButton title="Void" danger onPress={onVoid} />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  dayNav: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
-  navButton: { width: 56 },
-  dayLabel: { flex: 1, alignItems: 'center' },
-  dayText: { fontSize: 18, fontWeight: '800', color: colors.abyss, textAlign: 'center' },
-  loading: { marginTop: 24 },
-
-  totals: { marginTop: 16, marginBottom: 8, padding: 16, borderRadius: 14, backgroundColor: colors.abyss },
-  totalsMain: { fontSize: 28, fontWeight: '800', color: '#ffffff' },
-  totalsSub: { marginTop: 2, fontSize: 15, color: colors.onDarkMuted },
-
-  lineRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 14 },
-  lineMain: { flex: 1 },
-  lineQty: { alignItems: 'flex-end' },
-  fisher: { fontSize: 18, fontWeight: '800', color: colors.abyss },
-  qty: { fontSize: 16, fontWeight: '800', color: colors.abyss },
-  meta: { fontSize: 14, color: colors.muted },
-  struck: { color: colors.muted, textDecorationLine: 'line-through' },
-  voidNote: { marginTop: 2, fontSize: 14, fontWeight: '700', color: colors.coral },
+  dayNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  navButton: {
+    width: 56,
+  },
+  dayLabel: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dayText: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  loading: {
+    marginTop: 24,
+  },
+  totals: {
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 14,
+  },
+  totalsMain: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  totalsSub: {
+    marginTop: 2,
+    fontSize: 15,
+  },
+  lineRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 14,
+  },
+  lineMain: {
+    flex: 1,
+  },
+  lineQty: {
+    alignItems: 'flex-end',
+  },
+  fisher: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  qty: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  meta: {
+    fontSize: 14,
+  },
+  struck: {
+    textDecorationLine: 'line-through',
+  },
+  voidNote: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

@@ -1,17 +1,21 @@
+
 // What staff see after signing in: scan a fisher's QR, today's deliveries, the fisher list, and registration.
 
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { BackHandler, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { api, errorText } from '../api';
 import { TabBar } from '../components/TabBar';
 import type { TabItem } from '../components/TabBar';
+import { ThemeSelector } from '../components/ThemeSelector';
 import { Icon } from '../Icon';
 import { useSession } from '../session';
-import { colors } from '../theme';
+import { useTheme } from '../ThemeContext';
 import type { FisherAdmin } from '../types';
 import { Button } from '../ui';
+
 import { FisherDetail } from './staff/FisherDetail';
 import { FishersScreen } from './staff/FishersScreen';
 import { NewFisherScreen } from './staff/NewFisherScreen';
@@ -30,6 +34,8 @@ const TABS: ReadonlyArray<TabItem<Tab>> = [
 export function StaffApp() {
   const session = useSession();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+
   const [tab, setTab] = useState<Tab>('scan');
   const [fishers, setFishers] = useState<FisherAdmin[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -53,11 +59,16 @@ export function StaffApp() {
 
   const upsert = useCallback((fisher: FisherAdmin) => {
     setFishers((list) =>
-      [...(list ?? []).filter((f) => f.id !== fisher.id), fisher].sort((a, b) => a.name.localeCompare(b.name)),
+      [...(list ?? []).filter((f) => f.id !== fisher.id), fisher].sort(
+        (a, b) => a.name.localeCompare(b.name),
+      ),
     );
   }, []);
 
-  const open = useCallback((fisher: FisherAdmin) => setDetail({ id: fisher.id, showQr: false }), []);
+  const open = useCallback(
+    (fisher: FisherAdmin) => setDetail({ id: fisher.id, showQr: false }),
+    [],
+  );
 
   const openByToken = useCallback(
     (token: string) => {
@@ -67,25 +78,31 @@ export function StaffApp() {
     [fishers, open],
   );
 
-  // Android back button: close the fisher, then go back to the Scan tab, then leave the app.
+  // Android back button: close the fisher, then return to Scan.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (detail) {
         setDetail(null);
         return true;
       }
+
       if (tab !== 'scan') {
         setTab('scan');
         return true;
       }
+
       return false;
     });
+
     return () => sub.remove();
   }, [detail, tab]);
 
-  const detailFisher = detail ? (fishers?.find((f) => f.id === detail.id) ?? null) : null;
+  const detailFisher = detail
+    ? (fishers?.find((f) => f.id === detail.id) ?? null)
+    : null;
 
   let content: ReactElement;
+
   if (detail && detailFisher) {
     content = (
       <FisherDetail
@@ -131,18 +148,37 @@ export function StaffApp() {
   }
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.ice }]}>
       {detail && detailFisher ? null : (
-        <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
+        <View
+          style={[
+            styles.topbar,
+            {
+              paddingTop: insets.top + 10,
+              backgroundColor: colors.abyss,
+            },
+          ]}
+        >
           <View style={styles.brand}>
             <Icon name="fish" size={26} color={colors.yellow} />
             <Text style={styles.brandText}>ISDAKO</Text>
             <Text style={styles.badge}>Staff</Text>
           </View>
-          <Button small variant="light" title="Sign out" onPress={() => void session.signOutStaff()} />
+
+          <View style={styles.actions}>
+            <ThemeSelector />
+            <Button
+              small
+              variant="light"
+              title="Sign out"
+              onPress={() => void session.signOutStaff()}
+            />
+          </View>
         </View>
       )}
+
       <View style={styles.flex}>{content}</View>
+
       <TabBar
         tabs={TABS}
         active={tab}
@@ -156,18 +192,30 @@ export function StaffApp() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.ice },
-  flex: { flex: 1 },
+  root: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: colors.abyss,
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandText: { fontSize: 20, fontWeight: '800', letterSpacing: 0.5, color: '#ffffff' },
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    color: '#ffffff',
+  },
   badge: {
     overflow: 'hidden',
     paddingHorizontal: 8,
@@ -175,7 +223,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     fontSize: 12,
     fontWeight: '800',
-    color: colors.yellowInk,
-    backgroundColor: colors.yellow,
+    color: '#3b2a00',
+    backgroundColor: '#f6b93b',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });

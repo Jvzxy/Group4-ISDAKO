@@ -1,8 +1,12 @@
+
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Icon } from '../Icon';
 import type { IconName } from '../Icon';
-import { TAB_BAR_HEIGHT, colors } from '../theme';
+
+import { TAB_BAR_HEIGHT } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export interface TabItem<T extends string> {
   id: T;
@@ -20,10 +24,23 @@ export function TabBar<T extends string>({
   onChange: (id: T) => void;
 }) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.bar, { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.bar,
+        {
+          height: TAB_BAR_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
+          borderTopColor: colors.line,
+          backgroundColor: colors.foam,
+        },
+      ]}
+    >
       {tabs.map((tab) => {
         const selected = tab.id === active;
+
         return (
           <Pressable
             key={tab.id}
@@ -31,10 +48,25 @@ export function TabBar<T extends string>({
             accessibilityState={{ selected }}
             accessibilityLabel={tab.label}
             onPress={() => onChange(tab.id)}
-            style={[styles.tab, selected && styles.tabActive]}
+            style={[
+              styles.tab,
+              selected && { borderTopColor: colors.yellow },
+            ]}
           >
-            <Icon name={tab.icon} size={26} color={selected ? colors.abyss : colors.muted} />
-            <Text style={[styles.label, selected && styles.labelActive]}>{tab.label}</Text>
+            <Icon
+              name={tab.icon}
+              size={26}
+              color={selected ? colors.abyss : colors.muted}
+            />
+
+            <Text
+              style={[
+                styles.label,
+                { color: selected ? colors.abyss : colors.muted },
+              ]}
+            >
+              {tab.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -46,8 +78,6 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: colors.line,
-    backgroundColor: colors.foam,
   },
   tab: {
     flex: 1,
@@ -58,7 +88,8 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     marginTop: -1,
   },
-  tabActive: { borderTopColor: colors.yellow },
-  label: { fontSize: 12, fontWeight: '700', color: colors.muted },
-  labelActive: { color: colors.abyss },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });

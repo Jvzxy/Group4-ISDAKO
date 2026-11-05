@@ -1,9 +1,10 @@
+
 // Searchable list of fishers, used by the Scan and Fishers tabs.
 
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { describeFisher } from '../format';
-import { colors } from '../theme';
+import { useTheme } from '../ThemeContext';
 import type { FisherAdmin } from '../types';
 import { Button, ErrorText, Field, Muted, Notice } from '../ui';
 import { Row } from './Ledger';
@@ -23,6 +24,7 @@ export function FisherList({
   onAdd: () => void;
 }) {
   const [query, setQuery] = useState('');
+  const { colors } = useTheme();
 
   if (fishers === null) {
     if (loadError) {
@@ -33,7 +35,13 @@ export function FisherList({
         </Notice>
       );
     }
-    return <ActivityIndicator color={colors.abyss} style={styles.loading} />;
+
+    return (
+      <ActivityIndicator
+        color={colors.abyss}
+        style={styles.loading}
+      />
+    );
   }
 
   if (fishers.length === 0) {
@@ -46,8 +54,13 @@ export function FisherList({
   }
 
   const q = query.trim().toLowerCase();
+
   const shown = q
-    ? fishers.filter((f) => `${f.name} ${f.boat ?? ''} ${f.barangay ?? ''}`.toLowerCase().includes(q))
+    ? fishers.filter((f) =>
+        `${f.name} ${f.boat ?? ''} ${f.barangay ?? ''}`
+          .toLowerCase()
+          .includes(q),
+      )
     : fishers;
 
   return (
@@ -61,14 +74,25 @@ export function FisherList({
         autoCapitalize="none"
         clearButtonMode="while-editing"
       />
+
       <View style={styles.list}>
         {shown.map((f) => (
           <Row key={f.id} onPress={() => onOpen(f)}>
-            <Text style={styles.name}>{f.name}</Text>
-            {describeFisher(f) ? <Text style={styles.sub}>{describeFisher(f)}</Text> : null}
+            <Text style={[styles.name, { color: colors.abyss }]}>
+              {f.name}
+            </Text>
+
+            {describeFisher(f) ? (
+              <Text style={[styles.sub, { color: colors.muted }]}>
+                {describeFisher(f)}
+              </Text>
+            ) : null}
           </Row>
         ))}
-        {shown.length === 0 ? <Muted>No fisher matches that search.</Muted> : null}
+
+        {shown.length === 0 ? (
+          <Muted>No fisher matches that search.</Muted>
+        ) : null}
       </View>
     </View>
   );
@@ -77,6 +101,6 @@ export function FisherList({
 const styles = StyleSheet.create({
   loading: { marginTop: 24 },
   list: { marginTop: 8 },
-  name: { fontSize: 18, fontWeight: '800', color: colors.abyss },
-  sub: { fontSize: 14, color: colors.muted },
+  name: { fontSize: 18, fontWeight: '800' },
+  sub: { fontSize: 14 },
 });
