@@ -6,6 +6,7 @@ const KEYS = {
   server: 'isdako.server',
   fisher: 'isdako.fisher',
   staff: 'isdako.staff',
+  theme: 'isdako.theme',
 } as const;
 
 export interface StaffSession {
@@ -57,3 +58,18 @@ export const saveServer = (url: string): Promise<void> => write(KEYS.server, url
 export const saveFisher = (token: string | null): Promise<void> => write(KEYS.fisher, token);
 export const saveStaff = (session: StaffSession | null): Promise<void> =>
   write(KEYS.staff, session ? JSON.stringify(session) : null);
+
+export type SavedTheme = 'light' | 'dark' | 'system';
+
+export async function loadThemeMode(): Promise<SavedTheme> {
+  const saved = await read(KEYS.theme);
+
+  if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    return saved;
+  }
+
+  return 'system';
+}
+
+export const saveThemeMode = (mode: SavedTheme): Promise<void> =>
+  write(KEYS.theme, mode);

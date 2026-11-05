@@ -1,8 +1,19 @@
+
 // One fisher, as staff see them: their tag and deliveries, a form to record a new delivery,
 // their phone and SMS setting, and their QR code (to show them, or to replace it if it was lost).
 
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, errorText } from '../../api';
 import { Ledger } from '../../components/Ledger';
@@ -10,9 +21,14 @@ import { QrCode } from '../../components/QrCode';
 import { TagCard } from '../../components/TagCard';
 import { VoidModal } from '../../components/VoidModal';
 import { COMMON_SPECIES } from '../../constants';
-import { describeFisher, formatPhone, parseNumber, smsNotice } from '../../format';
+import {
+  describeFisher,
+  formatPhone,
+  parseNumber,
+  smsNotice,
+} from '../../format';
 import { useFisherView } from '../../hooks';
-import { colors } from '../../theme';
+import { useTheme } from '../../ThemeContext';
 import type { Delivery, FisherAdmin } from '../../types';
 import {
   Button,
@@ -38,6 +54,7 @@ export function FisherDetail({
 }) {
   const toast = useToast();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { view, error, refreshing, refresh, reload } = useFisherView(fisher.token);
   const [qrOpen, setQrOpen] = useState(startWithQr);
   const [voiding, setVoiding] = useState<Delivery | null>(null);
@@ -63,7 +80,7 @@ export function FisherDetail({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void refresh()}
-            tintColor="#ffffff"
+            tintColor={colors.foam}
             colors={[colors.yellow]}
             progressBackgroundColor={colors.abyss}
           />
@@ -72,27 +89,65 @@ export function FisherDetail({
         {view ? (
           <TagCard fisher={view.fisher} summary={view.summary} topLeft={back} />
         ) : (
-          <View style={[styles.loadingHeader, { paddingTop: insets.top + 12 }]}>
+          <View
+            style={[
+              styles.loadingHeader,
+              {
+                paddingTop: insets.top + 12,
+                backgroundColor: colors.abyss,
+              },
+            ]}
+          >
             {back}
-            <Text style={styles.loadingName}>{fisher.name}</Text>
-            {error ? <ErrorText>{error.message}</ErrorText> : <ActivityIndicator color={colors.yellow} />}
+            <Text style={[styles.loadingName, { color: colors.foam }]}>
+              {fisher.name}
+            </Text>
+            {error ? (
+              <ErrorText>{error.message}</ErrorText>
+            ) : (
+              <ActivityIndicator color={colors.yellow} />
+            )}
           </View>
         )}
 
         <View style={styles.body}>
-          <Button title="Show QR code" variant="dark" onPress={() => setQrOpen(true)} />
+          <Button
+            title="Show QR code"
+            variant="dark"
+            onPress={() => setQrOpen(true)}
+          />
 
-          <EntryForm token={fisher.token} onSaved={() => void reload()} />
+          <EntryForm
+            token={fisher.token}
+            onSaved={() => void reload()}
+          />
 
-          {view ? <Ledger deliveries={view.deliveries} onVoid={setVoiding} /> : null}
-          {error && view ? <Text style={styles.stale}>Could not refresh. Showing the last update.</Text> : null}
+          {view ? (
+            <Ledger deliveries={view.deliveries} onVoid={setVoiding} />
+          ) : null}
+
+          {error && view ? (
+            <Text style={[styles.stale, { color: colors.coral }]}>
+              Could not refresh. Showing the last update.
+            </Text>
+          ) : null}
 
           <PhoneCard fisher={fisher} onChanged={onChanged} />
         </View>
       </ScrollView>
 
-      <VoidModal delivery={voiding} onCancel={() => setVoiding(null)} onConfirm={confirmVoid} />
-      <QrModal fisher={fisher} visible={qrOpen} onClose={() => setQrOpen(false)} onChanged={onChanged} />
+      <VoidModal
+        delivery={voiding}
+        onCancel={() => setVoiding(null)}
+        onConfirm={confirmVoid}
+      />
+
+      <QrModal
+        fisher={fisher}
+        visible={qrOpen}
+        onClose={() => setQrOpen(false)}
+        onChanged={onChanged}
+      />
     </>
   );
 }
@@ -101,8 +156,16 @@ export function FisherDetail({
 // Record a delivery
 // ---------------------------------------------------------------------------
 
-function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
+function EntryForm({
+  token,
+  onSaved,
+}: {
+  token: string;
+  onSaved: () => void;
+}) {
   const toast = useToast();
+  const { colors } = useTheme();
+
   const [species, setSpecies] = useState('');
   const [kg, setKg] = useState('');
   const [pieces, setPieces] = useState('');
@@ -115,14 +178,21 @@ function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
     const kgValue = parseNumber(kg);
     const piecesValue = parseNumber(pieces);
     const priceValue = parseNumber(price);
+
     if (!species.trim()) {
       setError('Enter the type of fish.');
       return;
     }
-    if ([kgValue, piecesValue, priceValue].some((n) => n !== null && !Number.isFinite(n))) {
+
+    if (
+      [kgValue, piecesValue, priceValue].some(
+        (n) => n !== null && !Number.isFinite(n)
+      )
+    ) {
       setError('Kilos, number of fish and price must be numbers.');
       return;
     }
+
     if (kgValue === null && piecesValue === null) {
       setError('Enter the kilos or the number of fish.');
       return;
@@ -130,6 +200,7 @@ function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
 
     setError('');
     setBusy(true);
+
     try {
       const result = await api.addDelivery({
         token,
@@ -139,13 +210,16 @@ function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
         pricePerKg: priceValue,
         note: note.trim() || null,
       });
+
       const notice = smsNotice(result.sms, 'Saved');
       toast(notice.message, notice.kind);
+
       setSpecies('');
       setKg('');
       setPieces('');
       setPrice('');
       setNote('');
+
       onSaved();
     } catch (err) {
       setError(errorText(err));
@@ -155,39 +229,111 @@ function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
   };
 
   return (
-    <View style={styles.form}>
-      <Text style={styles.formTitle}>Record a delivery</Text>
-      <Field label="Type of fish" value={species} onChangeText={setSpecies} maxLength={60} autoCapitalize="words" autoComplete="off" />
+    <View
+      style={[
+        styles.form,
+        {
+          borderColor: colors.abyss,
+          backgroundColor: colors.surface,
+        },
+      ]}
+    >
+      <Text style={[styles.formTitle, { color: colors.text }]}>
+        Record a delivery
+      </Text>
+
+      <Field
+        label="Type of fish"
+        value={species}
+        onChangeText={setSpecies}
+        maxLength={60}
+        autoCapitalize="words"
+        autoComplete="off"
+      />
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.chips}
       >
-        {COMMON_SPECIES.map((name) => (
-          <Pressable
-            key={name}
-            accessibilityRole="button"
-            onPress={() => setSpecies(name)}
-            style={[styles.chip, species === name && styles.chipOn]}
-          >
-            <Text style={[styles.chipText, species === name && styles.chipTextOn]}>{name}</Text>
-          </Pressable>
-        ))}
+        {COMMON_SPECIES.map((name) => {
+          const selected = species === name;
+
+          return (
+            <Pressable
+              key={name}
+              accessibilityRole="button"
+              onPress={() => setSpecies(name)}
+              style={[
+                styles.chip,
+                {
+                  borderColor: selected ? colors.abyss : colors.border,
+                  backgroundColor: selected ? colors.abyss : colors.ice,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  {
+                    color: selected ? colors.foam : colors.text,
+                  },
+                ]}
+              >
+                {name}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
+
       <View style={styles.pair}>
         <View style={styles.half}>
-          <Field label="Kilos (kg)" value={kg} onChangeText={setKg} placeholder="0" keyboardType="decimal-pad" />
+          <Field
+            label="Kilos (kg)"
+            value={kg}
+            onChangeText={setKg}
+            placeholder="0"
+            keyboardType="decimal-pad"
+          />
         </View>
+
         <View style={styles.half}>
-          <Field label="Number of fish" value={pieces} onChangeText={setPieces} placeholder="0" keyboardType="number-pad" />
+          <Field
+            label="Number of fish"
+            value={pieces}
+            onChangeText={setPieces}
+            placeholder="0"
+            keyboardType="number-pad"
+          />
         </View>
       </View>
-      <Field label="Price per kilo (₱)" value={price} onChangeText={setPrice} placeholder="Optional" keyboardType="decimal-pad" />
-      <Field label="Note" value={note} onChangeText={setNote} placeholder="Optional" maxLength={200} />
+
+      <Field
+        label="Price per kilo (₱)"
+        value={price}
+        onChangeText={setPrice}
+        placeholder="Optional"
+        keyboardType="decimal-pad"
+      />
+
+      <Field
+        label="Note"
+        value={note}
+        onChangeText={setNote}
+        placeholder="Optional"
+        maxLength={200}
+      />
+
       <ErrorText>{error}</ErrorText>
+
       <View style={styles.submit}>
-        <Button title="Save delivery" loading={busy} onPress={() => void submit()} />
+        <Button
+          title="Save delivery"
+          loading={busy}
+          onPress={() => void submit()}
+        />
       </View>
     </View>
   );
@@ -197,8 +343,15 @@ function EntryForm({ token, onSaved }: { token: string; onSaved: () => void }) {
 // Phone number and SMS alerts
 // ---------------------------------------------------------------------------
 
-function PhoneCard({ fisher, onChanged }: { fisher: FisherAdmin; onChanged: (fisher: FisherAdmin) => void }) {
+function PhoneCard({
+  fisher,
+  onChanged,
+}: {
+  fisher: FisherAdmin;
+  onChanged: (fisher: FisherAdmin) => void;
+}) {
   const toast = useToast();
+
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState('');
   const [sms, setSms] = useState(true);
@@ -215,8 +368,14 @@ function PhoneCard({ fisher, onChanged }: { fisher: FisherAdmin; onChanged: (fis
   const save = async () => {
     setBusy(true);
     setError('');
+
     try {
-      const result = await api.setPhone(fisher.id, phone.trim() === '' ? null : phone, sms);
+      const result = await api.setPhone(
+        fisher.id,
+        phone.trim() === '' ? null : phone,
+        sms
+      );
+
       onChanged(result.fisher);
       setEditing(false);
       toast('Saved.');
@@ -230,6 +389,7 @@ function PhoneCard({ fisher, onChanged }: { fisher: FisherAdmin; onChanged: (fis
   return (
     <View>
       <SectionTitle>Phone and SMS alerts</SectionTitle>
+
       {editing ? (
         <View>
           <Field
@@ -241,19 +401,32 @@ function PhoneCard({ fisher, onChanged }: { fisher: FisherAdmin; onChanged: (fis
             maxLength={30}
             hint="Leave it empty to remove the number."
           />
+
           <SwitchRow
             label="Send SMS alerts"
             description="Texts the fisher each time a delivery is recorded."
             value={sms}
             onValueChange={setSms}
           />
+
           <ErrorText>{error}</ErrorText>
+
           <View style={styles.pairButtons}>
             <View style={styles.half}>
-              <Button title="Save" loading={busy} onPress={() => void save()} />
+              <Button
+                title="Save"
+                loading={busy}
+                onPress={() => void save()}
+              />
             </View>
+
             <View style={styles.half}>
-              <Button title="Cancel" variant="ghost" disabled={busy} onPress={() => setEditing(false)} />
+              <Button
+                title="Cancel"
+                variant="ghost"
+                disabled={busy}
+                onPress={() => setEditing(false)}
+              />
             </View>
           </View>
         </View>
@@ -264,7 +437,11 @@ function PhoneCard({ fisher, onChanged }: { fisher: FisherAdmin; onChanged: (fis
               ? `${formatPhone(fisher.phone)}. SMS alerts are ${fisher.smsOptIn ? 'on' : 'off'}.`
               : 'No mobile number. Add one to send SMS alerts.'}
           </Muted>
-          <LinkButton title={fisher.phone ? 'Change number' : 'Add a mobile number'} onPress={start} />
+
+          <LinkButton
+            title={fisher.phone ? 'Change number' : 'Add a mobile number'}
+            onPress={start}
+          />
         </View>
       )}
     </View>
@@ -287,6 +464,7 @@ function QrModal({
   onChanged: (fisher: FisherAdmin) => void;
 }) {
   const toast = useToast();
+  const { colors } = useTheme();
   const first = fisher.name.split(' ')[0] ?? fisher.name;
 
   const replace = () => {
@@ -310,24 +488,49 @@ function QrModal({
             })();
           },
         },
-      ],
+      ]
     );
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
-        <View style={styles.modalCard}>
+        <View
+          style={[
+            styles.modalCard,
+            { backgroundColor: colors.surface },
+          ]}
+        >
           <QrCode token={fisher.token} size={220} />
-          <Text style={styles.qrName}>{fisher.name}</Text>
-          {describeFisher(fisher) ? <Muted>{describeFisher(fisher)}</Muted> : null}
+
+          <Text style={[styles.qrName, { color: colors.text }]}>
+            {fisher.name}
+          </Text>
+
+          {describeFisher(fisher) ? (
+            <Muted>{describeFisher(fisher)}</Muted>
+          ) : null}
+
           <View style={styles.qrHelp}>
-            <Muted>{`Ask ${first} to open ISDAKO, tap "Scan my QR code", and scan this.`}</Muted>
+            <Muted>
+              {`Ask ${first} to open ISDAKO, tap "Scan my QR code", and scan this.`}
+            </Muted>
           </View>
+
           <View style={styles.modalActions}>
             <Button title="Done" onPress={onClose} />
           </View>
-          <LinkButton title="Lost it? Issue a new QR code" danger onPress={replace} />
+
+          <LinkButton
+            title="Lost it? Issue a new QR code"
+            danger
+            onPress={replace}
+          />
         </View>
       </View>
     </Modal>
@@ -338,40 +541,79 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingBottom: 40 },
   body: { paddingHorizontal: 16 },
-  loadingHeader: { paddingHorizontal: 16, paddingBottom: 28, gap: 8, backgroundColor: colors.abyss },
-  loadingName: { fontSize: 28, fontWeight: '800', color: '#ffffff' },
-  stale: { marginTop: 8, fontSize: 14, fontWeight: '700', color: colors.coral },
+
+  loadingHeader: {
+    paddingHorizontal: 16,
+    paddingBottom: 28,
+    gap: 8,
+  },
+  loadingName: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  stale: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '700',
+  },
 
   form: {
     marginTop: 20,
     padding: 16,
     borderWidth: 2,
-    borderColor: colors.abyss,
     borderRadius: 16,
-    backgroundColor: colors.foam,
   },
-  formTitle: { fontSize: 19, fontWeight: '800', color: colors.abyss },
-  chips: { gap: 8, paddingVertical: 10 },
+  formTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+  },
+  chips: {
+    gap: 8,
+    paddingVertical: 10,
+  },
   chip: {
     paddingHorizontal: 14,
     minHeight: 40,
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.line,
     borderRadius: 999,
-    backgroundColor: colors.ice,
   },
-  chipOn: { borderColor: colors.abyss, backgroundColor: colors.abyss },
-  chipText: { fontSize: 15, fontWeight: '700', color: colors.abyss },
-  chipTextOn: { color: '#ffffff' },
-  pair: { flexDirection: 'row', gap: 12 },
-  pairButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  chipText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  pair: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  pairButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
   half: { flex: 1 },
   submit: { marginTop: 14 },
 
-  backdrop: { flex: 1, justifyContent: 'center', padding: 16, backgroundColor: 'rgba(14,58,82,0.78)' },
-  modalCard: { alignItems: 'center', padding: 20, borderRadius: 20, backgroundColor: colors.foam },
-  qrName: { marginTop: 14, fontSize: 24, fontWeight: '800', textAlign: 'center', color: colors.abyss },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(14,58,82,0.78)',
+  },
+  modalCard: {
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 20,
+  },
+  qrName: {
+    marginTop: 14,
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   qrHelp: { marginTop: 8 },
-  modalActions: { alignSelf: 'stretch', marginTop: 16 },
+  modalActions: {
+    alignSelf: 'stretch',
+    marginTop: 16,
+  },
 });

@@ -1,43 +1,79 @@
-import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
+
+import {
+  ActivityIndicator,
+  StatusBar,
+  StyleSheet,
+  View,
+  useColorScheme,
+} from 'react-native';
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import { FisherApp } from './src/screens/FisherApp';
 import { StaffApp } from './src/screens/StaffApp';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
+
 import { SessionProvider, useSession } from './src/session';
-import { colors } from './src/theme';
+import { ThemeProvider, useTheme } from './src/ThemeContext';
 import { ToastProvider } from './src/ui';
 
 function Root() {
   const session = useSession();
+  const theme = useTheme();
 
-  if (!session.ready) {
+  if (!session.ready || !theme.ready) {
     return (
-      <View style={styles.splash}>
-        <ActivityIndicator size="large" color={colors.yellow} />
+      <View style={[styles.splash, { backgroundColor: theme.colors.abyss }]}>
+        <ActivityIndicator size="large" color={theme.colors.yellow} />
       </View>
     );
   }
+
   if (session.staffSignedIn) return <StaffApp />;
   if (session.fisherToken) return <FisherApp token={session.fisherToken} />;
+
   return <WelcomeScreen />;
+}
+
+function AppStatusBar() {
+  const { mode } = useTheme();
+  const systemScheme = useColorScheme();
+
+  const isDark =
+    mode === 'dark' ||
+    (mode === 'system' && systemScheme === 'dark');
+
+  return (
+    <StatusBar
+      barStyle={isDark ? 'light-content' : 'dark-content'}
+    />
+  );
 }
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="light-content" />
-      <ToastProvider>
-        <SessionProvider>
-          <View style={styles.root}>
-            <Root />
-          </View>
-        </SessionProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <AppStatusBar />
+        <ToastProvider>
+          <SessionProvider>
+            <View style={styles.root}>
+              <Root />
+            </View>
+          </SessionProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.ice },
-  splash: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.abyss },
+  root: {
+    flex: 1,
+  },
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -1,7 +1,16 @@
-// Small building blocks used by every screen: buttons, fields, notices, the toast, and the scrolling page.
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import type { ReactElement, ReactNode } from 'react';
+
 import {
   ActivityIndicator,
   Animated,
@@ -15,24 +24,106 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
 import type { StyleProp, TextInputProps, ViewStyle } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_BAR_HEIGHT, colors } from './theme';
+import { TAB_BAR_HEIGHT } from './theme';
+import { useTheme } from './ThemeContext';
+
+// ---------------------------------------------------------------------------
+// Shared styles
+// ---------------------------------------------------------------------------
+
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    flex: { flex: 1 },
+    screenContent: { padding: 16, paddingBottom: 32 },
+
+    button: {
+      minHeight: 50,
+      paddingHorizontal: 18,
+      borderRadius: 12,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonSmall: { minHeight: 44, paddingHorizontal: 14 },
+    buttonText: { fontSize: 17, fontWeight: '700' },
+    pressed: { opacity: 0.85, transform: [{ translateY: 1 }] },
+    off: { opacity: 0.55 },
+
+    linkWrap: { paddingVertical: 8, alignSelf: 'flex-start' },
+    title: { fontSize: 26, fontWeight: '800', color: colors.abyss },
+    onDark: { color: '#ffffff' },
+    sectionTitle: {
+      marginTop: 24,
+      marginBottom: 4,
+      fontSize: 19,
+      fontWeight: '800',
+      color: colors.abyss,
+    },
+    muted: { fontSize: 15, lineHeight: 21, color: colors.muted },
+    mutedLight: { color: colors.onDarkMuted },
+    errorText: { fontSize: 15, fontWeight: '700', color: colors.coral },
+
+    field: { marginTop: 14 },
+    label: { fontSize: 16, fontWeight: '700', color: colors.abyss },
+    hint: { marginTop: 4, fontSize: 14, lineHeight: 19, color: colors.muted },
+    input: {
+      minHeight: 52,
+      marginTop: 6,
+      paddingHorizontal: 14,
+      borderWidth: 2,
+      borderColor: colors.line,
+      borderRadius: 12,
+      backgroundColor: colors.foam,
+      fontSize: 18,
+      color: colors.abyss,
+    },
+
+    switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
+    switchText: { flex: 1 },
+
+    notice: {
+      marginTop: 16,
+      padding: 16,
+      gap: 12,
+      borderWidth: 2,
+      borderStyle: 'dashed',
+      borderColor: colors.line,
+      borderRadius: 14,
+    },
+
+    toastWrap: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      alignItems: 'center',
+      pointerEvents: 'none',
+    },
+    toast: {
+      maxWidth: 420,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: 12,
+      backgroundColor: colors.abyss,
+    },
+    toastError: { backgroundColor: colors.coral },
+    toastText: {
+      color: '#ffffff',
+      fontSize: 15,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Buttons
 // ---------------------------------------------------------------------------
 
 type Variant = 'primary' | 'dark' | 'ghost' | 'light' | 'danger';
-
-const VARIANTS: Record<Variant, { box: ViewStyle; text: string }> = {
-  primary: { box: { backgroundColor: colors.yellow, borderColor: colors.yellow }, text: colors.yellowInk },
-  dark: { box: { backgroundColor: colors.abyss, borderColor: colors.abyss }, text: '#ffffff' },
-  ghost: { box: { backgroundColor: 'transparent', borderColor: colors.line }, text: colors.abyss },
-  /** outline button for dark backgrounds */
-  light: { box: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.5)' }, text: '#ffffff' },
-  danger: { box: { backgroundColor: colors.coral, borderColor: colors.coral }, text: '#ffffff' },
-};
 
 export function Button({
   title,
@@ -51,8 +142,20 @@ export function Button({
   small?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const variants = {
+    primary: { box: { backgroundColor: colors.yellow, borderColor: colors.yellow }, text: colors.yellowInk },
+    dark: { box: { backgroundColor: colors.abyss, borderColor: colors.abyss }, text: '#ffffff' },
+    ghost: { box: { backgroundColor: 'transparent', borderColor: colors.line }, text: colors.abyss },
+    light: { box: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.5)' }, text: '#ffffff' },
+    danger: { box: { backgroundColor: colors.coral, borderColor: colors.coral }, text: '#ffffff' },
+  };
+
   const off = disabled || loading;
-  const look = VARIANTS[variant];
+  const look = variants[variant];
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -62,7 +165,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        small && styles.buttonSmall,
+        small && { minHeight: 44, paddingHorizontal: 14 },
         look.box,
         pressed && styles.pressed,
         off && styles.off,
@@ -78,7 +181,10 @@ export function Button({
   );
 }
 
-/** A text-only button, for secondary actions. */
+// ---------------------------------------------------------------------------
+// Text-only button
+// ---------------------------------------------------------------------------
+
 export function LinkButton({
   title,
   onPress,
@@ -90,9 +196,20 @@ export function LinkButton({
   danger?: boolean;
   light?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={styles.linkWrap}>
-      <Text style={[styles.link, danger && styles.linkDanger, light && styles.linkLight]}>{title}</Text>
+      <Text
+        style={[
+          { fontSize: 15, fontWeight: '700', textDecorationLine: 'underline', color: colors.abyss },
+          danger && { color: colors.coral },
+          light && { color: '#ffffff' },
+        ]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 }
@@ -102,6 +219,9 @@ export function LinkButton({
 // ---------------------------------------------------------------------------
 
 export function Title({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
     <Text accessibilityRole="header" style={[styles.title, light && styles.onDark]}>
       {children}
@@ -110,26 +230,32 @@ export function Title({ children, light = false }: { children: ReactNode; light?
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <Text accessibilityRole="header" style={styles.sectionTitle}>
-      {children}
-    </Text>
-  );
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  return <Text accessibilityRole="header" style={styles.sectionTitle}>{children}</Text>;
 }
 
 export function Muted({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return <Text style={[styles.muted, light && styles.mutedLight]}>{children}</Text>;
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return children ? (
-    <Text accessibilityRole="alert" style={styles.errorText}>
-      {children}
-    </Text>
+    <Text accessibilityRole="alert" style={styles.errorText}>{children}</Text>
   ) : null;
 }
 
 export function Field({ label, hint, ...input }: { label: string; hint?: string } & TextInputProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -157,6 +283,9 @@ export function SwitchRow({
   onValueChange: (next: boolean) => void;
   disabled?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
     <View style={styles.switchRow}>
       <View style={styles.switchText}>
@@ -176,11 +305,14 @@ export function SwitchRow({
 }
 
 export function Notice({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return <View style={styles.notice}>{children}</View>;
 }
 
 // ---------------------------------------------------------------------------
-// Page: scrolls, keeps the keyboard from covering fields, optional pull-to-refresh
+// Page
 // ---------------------------------------------------------------------------
 
 export function Screen({
@@ -192,8 +324,14 @@ export function Screen({
   refreshControl?: ReactElement;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={[styles.flex, { backgroundColor: colors.ice }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView
         style={styles.flex}
         contentContainerStyle={[styles.screenContent, contentStyle]}
@@ -212,6 +350,7 @@ export function Screen({
 // ---------------------------------------------------------------------------
 
 type ToastKind = 'ok' | 'error';
+
 interface ToastState {
   id: number;
   message: string;
@@ -220,10 +359,14 @@ interface ToastState {
 
 const ToastContext = createContext<(message: string, kind?: ToastKind) => void>(() => undefined);
 
-export const useToast = (): ((message: string, kind?: ToastKind) => void) => useContext(ToastContext);
+export const useToast = (): ((message: string, kind?: ToastKind) => void) =>
+  useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [toast, setToast] = useState<ToastState | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const counter = useRef(0);
@@ -235,17 +378,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!toast) return undefined;
+
     const shown = toast;
     opacity.setValue(0);
-    Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
+
     const timer = setTimeout(
       () => {
-        Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(({ finished }) => {
-          if (finished) setToast((current) => (current && current.id === shown.id ? null : current));
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(({ finished }) => {
+          if (finished) {
+            setToast((current) =>
+              current && current.id === shown.id ? null : current
+            );
+          }
         });
       },
       shown.kind === 'error' ? 5000 : 3000,
     );
+
     return () => clearTimeout(timer);
   }, [toast, opacity]);
 
@@ -254,7 +413,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {toast ? (
         <Animated.View
-          style={[styles.toastWrap, { bottom: insets.bottom + TAB_BAR_HEIGHT + 16, opacity }]}
+          style={[
+            styles.toastWrap,
+            { bottom: insets.bottom + TAB_BAR_HEIGHT + 16, opacity },
+          ]}
         >
           <View style={[styles.toast, toast.kind === 'error' && styles.toastError]}>
             <Text accessibilityLiveRegion="polite" style={styles.toastText}>
@@ -266,68 +428,3 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     </ToastContext.Provider>
   );
 }
-
-// ---------------------------------------------------------------------------
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screenContent: { padding: 16, paddingBottom: 32 },
-
-  button: {
-    minHeight: 50,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonSmall: { minHeight: 44, paddingHorizontal: 14 },
-  buttonText: { fontSize: 17, fontWeight: '700' },
-  pressed: { opacity: 0.85, transform: [{ translateY: 1 }] },
-  off: { opacity: 0.55 },
-
-  linkWrap: { paddingVertical: 8, alignSelf: 'flex-start' },
-  link: { fontSize: 15, fontWeight: '700', textDecorationLine: 'underline', color: colors.abyss },
-  linkDanger: { color: colors.coral },
-  linkLight: { color: '#ffffff' },
-
-  title: { fontSize: 26, fontWeight: '800', color: colors.abyss },
-  onDark: { color: '#ffffff' },
-  sectionTitle: { marginTop: 24, marginBottom: 4, fontSize: 19, fontWeight: '800', color: colors.abyss },
-  muted: { fontSize: 15, lineHeight: 21, color: colors.muted },
-  mutedLight: { color: colors.onDarkMuted },
-  errorText: { fontSize: 15, fontWeight: '700', color: colors.coral },
-
-  field: { marginTop: 14 },
-  label: { fontSize: 16, fontWeight: '700', color: colors.abyss },
-  hint: { marginTop: 4, fontSize: 14, lineHeight: 19, color: colors.muted },
-  input: {
-    minHeight: 52,
-    marginTop: 6,
-    paddingHorizontal: 14,
-    borderWidth: 2,
-    borderColor: colors.line,
-    borderRadius: 12,
-    backgroundColor: colors.foam,
-    fontSize: 18,
-    color: colors.abyss,
-  },
-
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
-  switchText: { flex: 1 },
-
-  notice: {
-    marginTop: 16,
-    padding: 16,
-    gap: 12,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: colors.line,
-    borderRadius: 14,
-  },
-
-  toastWrap: { position: 'absolute', left: 16, right: 16, alignItems: 'center', pointerEvents: 'none' },
-  toast: { maxWidth: 420, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 12, backgroundColor: colors.abyss },
-  toastError: { backgroundColor: colors.coral },
-  toastText: { color: '#ffffff', fontSize: 15, fontWeight: '700', textAlign: 'center' },
-});
