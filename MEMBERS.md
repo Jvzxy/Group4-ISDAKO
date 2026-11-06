@@ -8,8 +8,8 @@
     - **Role:** 
 - **Name:** Torres, Sean Gabrielle C. 
     - **Role:** Merge Reviewer
-- **Name:** 
-    - **Role:**
+- **Name:** Durain, Jussy Jay G.
+    - **Role:** Developer
 - **Name:**
     - **Role:**
 - **Name:**
