@@ -1,3 +1,16 @@
 # Group 4 Members
 
-- Redeemer B. Aparece - Documentation
+- **Name:** Aparece, Redeemer B.  
+    - **Role:** Documentation
+- **Name:** Gualberto, Yannis Love Evander B.  
+    - **Role:** Quality Assurance
+- **Name:** Villaceran, Trix John D. 
+    - **Role:** 
+- **Name:** Torres, Sean Gabrielle C. 
+    - **Role:** Merge Reviewer
+- **Name:** 
+    - **Role:**
+- **Name:**
+    - **Role:**
+- **Name:**
+    - **Role:**
