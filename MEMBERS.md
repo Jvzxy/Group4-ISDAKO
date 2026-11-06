@@ -5,12 +5,12 @@
 - **Name:** Gualberto, Yannis Love Evander B.  
     - **Role:** Quality Assurance
 - **Name:** Villaceran, Trix John D. 
-    - **Role:** 
+    - **Role:** DevOps Engineer
 - **Name:** Torres, Sean Gabrielle C. 
     - **Role:** Merge Reviewer
-- **Name:** Durain, Jussy Jay G.
-    - **Role:** Developer
-- **Name:**
-    - **Role:**
-- **Name:**
-    - **Role:**
+ - **Name:** Fugnit, Remiel Charles
+    - **Role:** Code Reviewer
+- **Name:** Durain, Jussy Jay
+    - **Role:** Frontend/Backend Developer
+- **Name:** Bunotan, Ike Feb
+    - **Role:** System Tester
