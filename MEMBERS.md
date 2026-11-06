@@ -5,7 +5,7 @@
 - **Name:** Gualberto, Yannis Love Evander B.  
     - **Role:** Quality Assurance
 - **Name:** Villaceran, Trix John D. 
-    - **Role:** 
+    - **Role:** DevOps Engineer
 - **Name:** Torres, Sean Gabrielle C. 
     - **Role:** Merge Reviewer
 - **Name:** 
