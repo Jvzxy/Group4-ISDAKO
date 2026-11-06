@@ -8,9 +8,9 @@
     - **Role:** DevOps Engineer
 - **Name:** Torres, Sean Gabrielle C. 
     - **Role:** Merge Reviewer
-- **Name:** 
-    - **Role:**
-- **Name:**
-    - **Role:**
-- **Name:**
-    - **Role:**
+- **Name:** Fugnit, Remiel Charles
+    - **Role:** Code Reviewer
+- **Name:** Durain, Jussy Jay
+    - **Role:** Frontend/Backend Developer
+- **Name:** Bunotan, Ike Feb
+    - **Role:** System Tester
