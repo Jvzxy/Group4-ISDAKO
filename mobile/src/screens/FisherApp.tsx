@@ -1,21 +1,38 @@
-// What a fisher sees every time they open the app: today's catch on the tag, then every delivery.
 
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { api, errorText } from '../api';
 import { Ledger } from '../components/Ledger';
 import { QrCode } from '../components/QrCode';
 import { TabBar } from '../components/TabBar';
 import type { TabItem } from '../components/TabBar';
 import { TagCard } from '../components/TagCard';
+import { ThemeSelector } from '../components/ThemeSelector';
 import { describeFisher, fmtTime } from '../format';
 import { useFisherView } from '../hooks';
 import { useSession } from '../session';
-import { colors } from '../theme';
+import { useTheme } from '../ThemeContext';
 import type { FisherPublic } from '../types';
-import { Button, LinkButton, Muted, Screen, SwitchRow, Title, useToast } from '../ui';
+import {
+  Button,
+  LinkButton,
+  Muted,
+  Screen,
+  SwitchRow,
+  Title,
+  useToast,
+} from '../ui';
 
 type Tab = 'catch' | 'qr';
 
@@ -26,10 +43,13 @@ const TABS: ReadonlyArray<TabItem<Tab>> = [
 
 export function FisherApp({ token }: { token: string }) {
   const session = useSession();
-  const { view, error, refreshing, updatedAt, refresh, reload } = useFisherView(token);
+  const { colors } = useTheme();
+  const { view, error, refreshing, updatedAt, refresh, reload } =
+    useFisherView(token);
   const [tab, setTab] = useState<Tab>('catch');
 
   let content: ReactElement | null = null;
+
   if (!view && !error) {
     content = (
       <View style={styles.center}>
@@ -39,14 +59,23 @@ export function FisherApp({ token }: { token: string }) {
   } else if (!view && error) {
     content = (
       <View style={styles.problem}>
-        <Title>{error.notFound ? 'This QR code no longer works' : "Can't load your deliveries"}</Title>
+        <Title>
+          {error.notFound
+            ? 'This QR code no longer works'
+            : "Can't load your deliveries"}
+        </Title>
+
         <Muted>
           {error.notFound
             ? 'It may have been replaced. Ask the staff to show your new QR code, then scan it.'
             : error.message}
         </Muted>
+
         {error.notFound ? (
-          <Button title="Scan a new QR code" onPress={() => void session.signOutFisher()} />
+          <Button
+            title="Scan a new QR code"
+            onPress={() => void session.signOutFisher()}
+          />
         ) : (
           <Button title="Try again" onPress={() => void reload()} />
         )}
@@ -62,30 +91,55 @@ export function FisherApp({ token }: { token: string }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void refresh()}
-            tintColor="#ffffff"
+            tintColor={colors.abyss}
             colors={[colors.yellow]}
-            progressBackgroundColor={colors.abyss}
+            progressBackgroundColor={colors.foam}
           />
         }
       >
         <TagCard fisher={view.fisher} summary={view.summary} />
+
         <View style={styles.body}>
-          {error ? <Text style={styles.stale}>Could not refresh. Showing your last update.</Text> : null}
+          {error ? (
+            <Text style={[styles.stale, { color: colors.coral }]}>
+              Could not refresh. Showing your last update.
+            </Text>
+          ) : null}
+
           <Ledger deliveries={view.deliveries} />
-          <Text style={styles.updated}>
-            {updatedAt ? `Updated ${fmtTime(updatedAt)}. Pull down to refresh.` : 'Pull down to refresh.'}
+
+          <Text style={[styles.updated, { color: colors.muted }]}>
+            {updatedAt
+              ? `Updated ${fmtTime(updatedAt)}. Pull down to refresh.`
+              : 'Pull down to refresh.'}
           </Text>
         </View>
       </ScrollView>
     );
   } else if (view) {
-    content = <MyQr token={token} view={view.fisher} onChanged={reload} />;
+    content = (
+      <MyQr
+        token={token}
+        view={view.fisher}
+        onChanged={reload}
+      />
+    );
   }
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.ice }]}>
+      <View style={styles.topbar}>
+        <Text style={[styles.brand, { color: colors.abyss }]}>
+          ISDAKO
+        </Text>
+        <ThemeSelector />
+      </View>
+
       <View style={styles.flex}>{content}</View>
-      {view ? <TabBar tabs={TABS} active={tab} onChange={setTab} /> : null}
+
+      {view ? (
+        <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      ) : null}
     </View>
   );
 }
@@ -106,6 +160,7 @@ function MyQr({
 
   const toggleSms = async (next: boolean) => {
     setSaving(true);
+
     try {
       await api.setSms(token, next);
       await onChanged();
@@ -118,22 +173,36 @@ function MyQr({
   };
 
   const useAnother = () => {
-    Alert.alert('Use a different QR code?', 'This phone will forget your QR code. You can scan it again any time.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Continue', style: 'destructive', onPress: () => void session.signOutFisher() },
-    ]);
+    Alert.alert(
+      'Use a different QR code?',
+      'This phone will forget your QR code. You can scan it again any time.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => void session.signOutFisher(),
+        },
+      ],
+    );
   };
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 16 }}>
       <Title>My QR code</Title>
+
       <View style={styles.gap}>
-        <Muted>Show this to the staff when you deliver. They scan it to record your catch.</Muted>
+        <Muted>
+          Show this to the staff when you deliver. They scan it to record your catch.
+        </Muted>
       </View>
+
       <View style={styles.qrWrap}>
         <QrCode token={token} size={230} />
         <Text style={styles.qrName}>{fisher.name}</Text>
-        {describeFisher(fisher) ? <Muted>{describeFisher(fisher)}</Muted> : null}
+        {describeFisher(fisher) ? (
+          <Muted>{describeFisher(fisher)}</Muted>
+        ) : null}
       </View>
 
       <SwitchRow
@@ -149,23 +218,75 @@ function MyQr({
       />
 
       <View style={styles.signOut}>
-        <LinkButton title="Use a different QR code" onPress={useAnother} />
+        <LinkButton
+          title="Use a different QR code"
+          onPress={useAnother}
+        />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.ice },
-  flex: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  problem: { flex: 1, justifyContent: 'center', gap: 12, padding: 24 },
-  catchContent: { paddingBottom: 32 },
-  body: { paddingHorizontal: 16 },
-  stale: { marginBottom: 8, fontSize: 14, fontWeight: '700', color: colors.coral },
-  updated: { marginTop: 28, fontSize: 14, color: colors.muted },
-  gap: { marginTop: 8 },
-  qrWrap: { alignItems: 'center', gap: 4, marginTop: 20 },
-  qrName: { marginTop: 12, fontSize: 24, fontWeight: '800', color: colors.abyss },
-  signOut: { marginTop: 28 },
+  root: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  topbar: {
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  brand: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  problem: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 12,
+    padding: 24,
+  },
+  catchContent: {
+    paddingBottom: 32,
+  },
+  body: {
+    paddingHorizontal: 16,
+  },
+  stale: {
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  updated: {
+    marginTop: 28,
+    fontSize: 14,
+  },
+  gap: {
+    marginTop: 8,
+  },
+  qrWrap: {
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 20,
+  },
+  qrName: {
+    marginTop: 12,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  signOut: {
+    marginTop: 28,
+  },
 });
